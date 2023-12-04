@@ -143,7 +143,7 @@ impl fmt::Display for string_manipulation::LTV {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ComplexError {
     ParseInt(ParseIntError),
     FromHex(FromHexError),
@@ -161,6 +161,27 @@ impl From<FromHexError> for ComplexError {
     }
 }
 
+impl fmt::Display for ComplexError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ComplexError::FromHex(..) =>
+                write!(f, "please use a vector with right hex string"),
+            ComplexError::ParseInt(..) =>
+                write!(f, "the provided string could not be parsed as int"),
+        }
+    }
+}
+
+use std::error;
+
+impl error::Error for ComplexError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match *self {
+            ComplexError::FromHex(ref e) => Some(e),
+            ComplexError::ParseInt(ref e) => Some(e),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -204,15 +225,21 @@ mod tests {
         assert!(ltvs.is_ok());
         assert!(ltvs.unwrap().is_empty());
     }
-    
+
     use crate::ComplexError;
+    use hex::FromHexError;
+    use std::error::Error;
     #[test]
     fn error_test() {
         let mut s = String::from("T31148690622576F726C64");
         let ltvs = s.parse_ltv();
         match ltvs {
             Err(e) => {
-                assert!(matches!(e, ComplexError::ParseInt(_e)));
+                println!("Error: {}", e);
+                if let Some(source) = e.source() {
+                    println!("  Caused by: {}", source);
+                }
+                  assert!(matches!(e, ComplexError::ParseInt(..)));
             }
             _ => panic!("Expected an error but got a result"),
         }
@@ -220,7 +247,11 @@ mod tests {
         let ltvs = s.parse_ltv();
         match ltvs {
             Err(e) => {
-                assert!(matches!(e, ComplexError::FromHex(_e)));
+                println!("Error: {}", e);
+                if let Some(source) = e.source() {
+                    println!("  Caused by: {}", source);
+                }
+                assert_eq!(e, ComplexError::FromHex(FromHexError::InvalidHexCharacter{c:'Y', index:1}));
             }
             _ => panic!("Expected an error but got a result"),
         }
