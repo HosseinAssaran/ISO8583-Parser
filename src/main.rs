@@ -89,8 +89,12 @@ fn main() {
             23 => s.process_field(23, 3, "Card Sequence Number", &mode),
             24 => s.process_field(24, 4, "", &mode),
             25 => s.process_field(25, 2, "", &mode),
+            32 => {
+                let field32_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap();
+                s.process_field(32, field32_len, "Institution Identification Code Acquiring", &mode);
+            }
             35 => {
-                let track2_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap();
+                let track2_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap() *2;
                 s.process_field(35, track2_len, "Track2", &mode);
             }
             37 => s.process_field(37, 24, "Retrieval Ref #", &mode),
@@ -133,6 +137,10 @@ fn main() {
             }
             64 => s.process_field(64, 16, "MAC", &mode),
             70 => s.process_field(70, 4, "", &mode),
+            116 => {
+                let field116_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
+                s.process_field(116, field116_len, "", &mode);
+            }
             122 => {
                 let field122_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
                 s.process_field(122, field122_len, "Additional Data", &mode);

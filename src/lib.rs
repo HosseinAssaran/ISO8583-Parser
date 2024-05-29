@@ -98,19 +98,23 @@ impl StringManipulation for String {
 
     /// Process a field based on field number, length, and name.
     fn process_field(&mut self, field_number: u32,length: u32,name: &str, mode: &Mode) {
+        let padded_length = if length % 2 == 1 {
+            length + 1
+        } else {
+            length
+        };
         let mut field_value = if field_number == 35 {
             self.get_slice_until(38 as usize)
         } else {
-            self.get_slice_until(length as usize)
+            self.get_slice_until(padded_length as usize)
         };
-
-        let value_to_print = if matches!(field_number, 37 | 38 | 41 | 42 | 44 | 49 | 50 | 51 | 62 | 122) {
+        let value_to_print = if matches!(field_number, 37 | 38 | 41 | 42 | 44 | 49 | 50 | 51 | 62 | 116 | 122) {
             field_value.hex_to_ascii().unwrap()
         } else {
             field_value.to_string()
         };
 
-        println!("Field {:3} | Length: {:3}| {:25} | {}", field_number, length, name, value_to_print);
+        println!("Field {:3} | Length: {:3}| {:25} | {}", field_number, length, name, value_to_print.chars().take(length as usize).collect::<String>());
         
         if field_number == 55 {
             match parse_tlv(value_to_print) {
