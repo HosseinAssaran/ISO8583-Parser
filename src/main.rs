@@ -83,6 +83,7 @@ fn main() {
             12 => s.process_field(12, 6, "Time", &mode),
             13 => s.process_field(13, 4, "Date", &mode),
             14 => s.process_field(14, 4, "Card EXpiration Date", &mode),
+            15 => s.process_field(15, 4, "Settlement Date", &mode),
             18 => s.process_field(18, 4, "Merchant Category Code", &mode),
             19 => s.process_field(19, 3, "Acquirer Country Code", &mode),
             22 => s.process_field(22, 4, "POS Entry Mode", &mode),
@@ -104,7 +105,7 @@ fn main() {
             42 => s.process_field(42, 30, "Acceptor", &mode),
             43 => s.process_field(43, 40, "Card Acceptor Name/Location", &mode),
             44 => {
-                let field44_len: u32 = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
+                let field44_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap() * 2;
                 s.process_field(44, field44_len, "Additional response data", &mode);
             }
             45 => {
