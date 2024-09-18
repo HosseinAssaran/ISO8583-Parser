@@ -142,6 +142,10 @@ fn main() {
                 let field116_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
                 s.process_field(116, field116_len, "", &mode);
             }
+            121 => {
+                let field121_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
+                s.process_field(121, field121_len, "Additional Data", &mode);
+            }
             122 => {
                 let field122_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
                 s.process_field(122, field122_len, "Additional Data", &mode);

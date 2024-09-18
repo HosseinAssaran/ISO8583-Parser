@@ -122,7 +122,7 @@ impl StringManipulation for String {
                 Err(e) => eprintln!("Error parsing TLV: {}", e),
             }
         }
-        else if field_number == 48  {
+        else if field_number == 48 || field_number == 121  {
             if mode.enabled_private_tlv {
                 let mut tlv_private_value = value_to_print;
                 match tlv_private_value.parse_private_tlv() {
