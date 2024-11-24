@@ -99,16 +99,40 @@ impl StringManipulation for String {
 
     /// Process a field based on field number, length, and name.
     fn process_field(&mut self, field_number: u32, length: u32, name: &str, mode: &Mode) -> String {
+        // Check if there's enough data to process
+        if self.len() == 0 {
+            return format!(
+                "Field {:3} | Length: {:3}| {:25} | Error: No data available\n",
+                field_number,
+                length,
+                name
+            );
+        }
+
         let padded_length = if length % 2 == 1 {
             length + 1
         } else {
             length
         };
+
+        // Check if there's enough data for the field
+        if self.len() < padded_length as usize {
+            return format!(
+                "Field {:3} | Length: {:3}| {:25} | Error: Insufficient data (needed {} bytes, had {} bytes)\n",
+                field_number,
+                length,
+                name,
+                padded_length,
+                self.len()
+            );
+        }
+
         let mut field_value = if field_number == 35 {
-            self.get_slice_until(38 as usize)
+            self.get_slice_until(38.min(self.len()))
         } else {
             self.get_slice_until(padded_length as usize)
         };
+
         let value_to_print = if matches!(field_number, 37 | 38 | 41 | 42 | 44 | 49 | 50 | 51 | 62 | 116 | 122) {
             field_value.hex_to_ascii().unwrap()
         } else {
@@ -266,7 +290,7 @@ pub fn parse_iso8583(message: &str, including_header_length: bool, tlv_private: 
         enabled_private_tlv: tlv_private,
         enabled_private_ltv: ltv_private,
     };
-
+    
     for &bit in &result.bitmap {
         let field_info = match bit {
             2 => {
