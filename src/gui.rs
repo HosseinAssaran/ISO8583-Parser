@@ -64,7 +64,11 @@ impl eframe::App for ISO8583ParserApp {
                     egui::RichText::new(&self.parsed_output).monospace()
                 };
                 
-                ui.add(egui::Label::new(output_text).wrap());
+                egui::ScrollArea::vertical()
+                .max_height(200.0) // You can adjust this value based on your needs
+                .show(ui, |ui| {
+                    ui.add(egui::Label::new(output_text).wrap());
+            });
             }
         });
     }
