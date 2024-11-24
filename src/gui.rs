@@ -30,8 +30,17 @@ impl eframe::App for ISO8583ParserApp {
             ui.add_space(10.0);
 
             ui.checkbox(&mut self.include_length_header, "The message includes length and header");
-            ui.checkbox(&mut self.parse_private_tlv, "Parse Private TLV");
-            ui.checkbox(&mut self.parse_private_ltv, "Parse Private LTV");
+            if ui.checkbox(&mut self.parse_private_tlv, "Parse Private TLV").clicked() {
+                if self.parse_private_tlv {
+                    self.parse_private_ltv = false; // Uncheck the other
+                }
+            }
+            
+            if ui.checkbox(&mut self.parse_private_ltv, "Parse Private LTV").clicked() {
+                if self.parse_private_ltv {
+                    self.parse_private_tlv = false; // Uncheck the other
+                }
+            }
             ui.add_space(10.0);
 
             ui.label("Enter the message:");
