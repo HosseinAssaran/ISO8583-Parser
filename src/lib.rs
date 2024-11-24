@@ -75,7 +75,7 @@ pub trait StringManipulation {
     fn hex_to_ascii(&mut self) -> Result<String, hex::FromHexError>;
 
     /// Process a field based on field number, length, and name.
-    fn process_field(&mut self, field_number: u32, length: u32, name: &str, mode: &Mode);
+    fn process_field(&mut self, field_number: u32, length: u32, name: &str, mode: &Mode) -> String;
 
     /// Parse LTV (Length, Tag, Value) format.
     fn parse_private_ltv(&mut self) -> Result<Vec<LTV>, Box<dyn error::Error>>;
@@ -98,7 +98,7 @@ impl StringManipulation for String {
     }
 
     /// Process a field based on field number, length, and name.
-    fn process_field(&mut self, field_number: u32,length: u32,name: &str, mode: &Mode) {
+    fn process_field(&mut self, field_number: u32, length: u32, name: &str, mode: &Mode) -> String {
         let padded_length = if length % 2 == 1 {
             length + 1
         } else {
@@ -114,31 +114,49 @@ impl StringManipulation for String {
         } else {
             field_value.to_string()
         };
-
-        println!("Field {:3} | Length: {:3}| {:25} | {}", field_number, length, name, value_to_print.chars().take(length as usize).collect::<String>());
-        
+    
+        let mut result = format!(
+            "Field {:3} | Length: {:3}| {:25} | {}\n",
+            field_number,
+            length,
+            name,
+            value_to_print.chars().take(length as usize).collect::<String>()
+        );
+    
         if field_number == 55 {
             match parse_tlv(value_to_print) {
-                Ok(tags) => tags.iter().for_each(|tag| println!("{}", tag)),
-                Err(e) => eprintln!("Error parsing TLV: {}", e),
+                Ok(tags) => {
+                    for tag in tags {
+                        result.push_str(&format!("{}\n", tag));
+                    }
+                }
+                Err(e) => result.push_str(&format!("Error parsing TLV: {}\n", e)),
             }
-        }
-        else if field_number == 48 || field_number == 121  {
+        } else if field_number == 48 || field_number == 121 {
             if mode.enabled_private_tlv {
                 let mut tlv_private_value = value_to_print;
                 match tlv_private_value.parse_private_tlv() {
-                    Ok(tlvs_p) => tlvs_p.iter().for_each(|tlv_p| println!("{}", tlv_p)),
-                    Err(e) => eprintln!("Error parsing private tlv: {:?}", e),
+                    Ok(tlvs_p) => {
+                        for tlv_p in tlvs_p {
+                            result.push_str(&format!("{}\n", tlv_p));
+                        }
+                    }
+                    Err(e) => result.push_str(&format!("Error parsing private tlv: {:?}\n", e)),
                 }
-            }
-            else if mode.enabled_private_ltv {
+            } else if mode.enabled_private_ltv {
                 let mut ltv_value = value_to_print;
                 match ltv_value.parse_private_ltv() {
-                    Ok(ltvs) => ltvs.iter().for_each(|ltv| println!("{}", ltv)),
-                    Err(e) => eprintln!("Error parsing LTV: {:?}", e),
+                    Ok(ltvs) => {
+                        for ltv in ltvs {
+                            result.push_str(&format!("{}\n", ltv));
+                        }
+                    }
+                    Err(e) => result.push_str(&format!("Error parsing LTV: {:?}\n", e)),
                 }
             }
         }
+    
+        result
     }
 
 
@@ -207,7 +225,7 @@ pub struct ParserResult {
     pub header: Option<String>,
     pub mti: String,
     pub bitmap: Vec<u32>,
-    pub fields: Vec<(u32, String, String)>, // (field number, name, value)
+    pub fields: Vec<String>,  // Added this field to store the processed fields
     pub unparsed: String,
 }
 
@@ -250,93 +268,98 @@ pub fn parse_iso8583(message: &str, including_header_length: bool, tlv_private: 
     };
 
     for &bit in &result.bitmap {
-        match bit {
+        let field_info = match bit {
             2 => {
-                let pan_len: u32 =  s.get_slice_until(2).parse::<u32>().unwrap();
-                s.process_field(2, pan_len, "PAN", &mode);
+                let pan_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap();
+                Some((bit, pan_len, "PAN"))
             }
-            3 => s.process_field(3, 6, "Process Code", &mode),
-            4 => s.process_field(4, 12, "Transaction Amount", &mode),
-            5 => s.process_field(5, 12, "Settlement Amount", &mode),
-            6 => s.process_field(6, 12, "Cardholder Billing Amount", &mode),
-            7 => s.process_field(7, 10, "Transaction Date and Time", &mode),
-            9 => s.process_field(9, 8, "Conversion rate, settlement", &mode),
-            10 => s.process_field(10, 8, "Conversion rate, cardholder billing", &mode),
-            11 => s.process_field(11, 6, "Trace", &mode),
-            12 => s.process_field(12, 6, "Time", &mode),
-            13 => s.process_field(13, 4, "Date", &mode),
-            14 => s.process_field(14, 4, "Card EXpiration Date", &mode),
-            15 => s.process_field(15, 4, "Settlement Date", &mode),
-            18 => s.process_field(18, 4, "Merchant Category Code", &mode),
-            19 => s.process_field(19, 3, "Acquirer Country Code", &mode),
-            22 => s.process_field(22, 4, "POS Entry Mode", &mode),
-            23 => s.process_field(23, 3, "Card Sequence Number", &mode),
-            24 => s.process_field(24, 4, "", &mode),
-            25 => s.process_field(25, 2, "", &mode),
+            3 => Some((bit, 6, "Process Code")),
+            4 => Some((bit, 12, "Transaction Amount")),
+            5 => Some((bit, 12, "Settlement Amount")),
+            6 => Some((bit, 12, "Cardholder Billing Amount")),
+            7 => Some((bit, 10, "Transaction Date and Time")),
+            9 => Some((bit, 8, "Conversion rate, settlement")),
+            10 => Some((bit, 8, "Conversion rate, cardholder billing")),
+            11 => Some((bit, 6, "Trace")),
+            12 => Some((bit, 6, "Time")),
+            13 => Some((bit, 4, "Date")),
+            14 => Some((bit, 4, "Card EXpiration Date")),
+            15 => Some((bit, 4, "Settlement Date")),
+            18 => Some((bit, 4, "Merchant Category Code")),
+            19 => Some((bit, 3, "Acquirer Country Code")),
+            22 => Some((bit, 4, "POS Entry Mode")),
+            23 => Some((bit, 3, "Card Sequence Number")),
+            24 => Some((bit, 4, "")),
+            25 => Some((bit, 2, "")),
             32 => {
                 let field32_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap();
-                s.process_field(32, field32_len, "Institution Identification Code Acquiring", &mode);
+                Some((bit, field32_len, "Institution Identification Code Acquiring"))
             }
             35 => {
-                let track2_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap() *2;
-                s.process_field(35, track2_len, "Track2", &mode);
+                let track2_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap() * 2;
+                Some((bit, track2_len, "Track2"))
             }
-            37 => s.process_field(37, 24, "Retrieval Ref #", &mode),
-            38 => s.process_field(38, 12, "Authorization Code", &mode),
-            39 => s.process_field(39, 4, "Response Code", &mode),
-            41 => s.process_field(41, 16, "Terminal", &mode),
-            42 => s.process_field(42, 30, "Acceptor", &mode),
-            43 => s.process_field(43, 40, "Card Acceptor Name/Location", &mode),
+            37 => Some((bit, 24, "Retrieval Ref #")),
+            38 => Some((bit, 12, "Authorization Code")),
+            39 => Some((bit, 4, "Response Code")),
+            41 => Some((bit, 16, "Terminal")),
+            42 => Some((bit, 30, "Acceptor")),
+            43 => Some((bit, 40, "Card Acceptor Name/Location")),
             44 => {
                 let field44_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap() * 2;
-                s.process_field(44, field44_len, "Additional response data", &mode);
+                Some((bit, field44_len, "Additional response data"))
             }
             45 => {
                 let track1_len: u32 = s.get_slice_until(2).parse::<u32>().unwrap();
-                s.process_field(45, track1_len, "Track 1 Data", &mode);
+                Some((bit, track1_len, "Track 1 Data"))
             }
             48 => {
                 let field48_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(48, field48_len, "Aditional Data", &mode);
+                Some((bit, field48_len, "Aditional Data"))
             }
-            49 => s.process_field(49, 6, "Transaction Currency Code", &mode),
-            50 => s.process_field(50, 6, "Settlement Currency Code", &mode),
-            51 => s.process_field(51, 6, "Billing Currency Code", &mode),
-            52 => s.process_field(52, 16, "PinBlock", &mode),
+            49 => Some((bit, 6, "Transaction Currency Code")),
+            50 => Some((bit, 6, "Settlement Currency Code")),
+            51 => Some((bit, 6, "Billing Currency Code")),
+            52 => Some((bit, 16, "PinBlock")),
             54 => {
                 let field54_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(54, field54_len, "Amount", &mode);
+                Some((bit, field54_len, "Amount"))
             }
             55 => {
                 let field55_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(55, field55_len, "", &mode);
+                Some((bit, field55_len, ""))
             }
             60 => {
                 let field60_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(60, field60_len, "", &mode);              
+                Some((bit, field60_len, ""))
             }
             62 => {
                 let field62_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(62, field62_len, "Private", &mode);
+                Some((bit, field62_len, "Private"))
             }
-            64 => s.process_field(64, 16, "MAC", &mode),
-            70 => s.process_field(70, 4, "", &mode),
+            64 => Some((bit, 16, "MAC")),
+            70 => Some((bit, 4, "")),
             116 => {
                 let field116_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(116, field116_len, "", &mode);
+                Some((bit, field116_len, ""))
             }
             121 => {
                 let field121_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(121, field121_len, "Additional Data", &mode);
+                Some((bit, field121_len, "Additional Data"))
             }
             122 => {
                 let field122_len = s.get_slice_until(4).parse::<u32>().unwrap() * 2;
-                s.process_field(122, field122_len, "Additional Data", &mode);
+                Some((bit, field122_len, "Additional Data"))
             }
-            128 => s.process_field(128, 16, "MAC", &mode),
+            128 => Some((bit, 16, "MAC")),
             _ => return Err(format!("Field {} is not implemented", bit).into()),
+        };
+
+        if let Some((field_number, length, name)) = field_info {
+            let field_data = s.process_field(field_number, length, name, &mode);
+            result.fields.push(field_data);
         }
-     }
+    }
 
     result.unparsed = s;
     Ok(result)

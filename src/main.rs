@@ -66,12 +66,8 @@ fn main() {
             println!("First Bit Map: {:?}", result.bitmap);
             
             // Print all parsed fields
-            for (field, name, value) in result.fields {
-                if name.is_empty() {
-                    println!("Field {}: {}", field, value);
-                } else {
-                    println!("Field {}: {} = {}", field, name, value);
-                }
+            for field in result.fields {
+                println!("{}", field);
             }
             
             // Print any unparsed data

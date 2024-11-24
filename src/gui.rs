@@ -92,8 +92,8 @@ impl ISO8583ParserApp {
                 output.push_str(&format!("MTI: {}\n", result.mti));
                 output.push_str(&format!("First Bit Map: {:?}\n\n", result.bitmap));
                 
-                for (field, name, value) in result.fields {
-                    output.push_str(&format!("Field {}: {} = {}\n", field, name, value));
+                for field in result.fields {
+                    output.push_str(&format!("{}\n", field));
                 }
                 
                 if !result.unparsed.is_empty() {
