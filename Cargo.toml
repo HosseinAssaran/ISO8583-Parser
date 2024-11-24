@@ -8,6 +8,7 @@ repository = "https://github.com/HosseinAssaran/ISO8583-Parser"
 
 [dependencies]
 clap = { version = "4.4.18", features = ["derive"] }
+eframe = "0.29.1"
 emv_tlv_parser = "0.1.8"
 hex = "0.4.3"
 
@@ -18,3 +19,7 @@ http.check-revoke = "false"
 lto = true
 strip = true
 codegen-units = 1
+
+[[bin]]
+name = "iso8583_parser_gui"
+path = "src/gui_main.rs"

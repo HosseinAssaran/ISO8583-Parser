@@ -4,10 +4,47 @@
 ![build workflow](https://github.com/HosseinAssaran/ISO8583-Parser/actions/workflows/rust.yml/badge.svg)
 ![release workflow](https://github.com/HosseinAssaran/ISO8583-Parser/actions/workflows/release.yml/badge.svg)
 
-This Rust program gets iso messages in hex string format and it extracts and processes specific fields from an input message.
+This Rust program parses ISO8583 messages in hex string format and extracts specific fields. It provides multiple interfaces including a GUI, CLI, and a library for integration into other projects.
 
-**Important Note:** As the PHP Web server uses a rust program to parse the message, you will need it. You can achieve this program by building release of the rust written program from the source or you can downlaod the executable file with **iso_parser_downloader**.
+## Features
+
+- Parse ISO8583 messages with or without length headers
+- Support for private TLV (Tag-Length-Value) parsing
+- Support for private LTV (Length-Tag-Value) parsing
+- Multiple interfaces:
+  - Graphical User Interface (GUI)
+  - Command Line Interface (CLI)
+  - PHP Web Server Interface
+  - Library for integration
+- Detailed field parsing with field names and descriptions
+
 ## Usage
+
+### GUI Application
+
+1. Run the GUI version using:
+```bash
+cargo run --bin iso8583_parser_gui
+```
+
+### Command Line Interface (CLI)
+
+1. Clone the repository:
+```bash
+git clone https://github.com/HosseinAssaran/ISO8583-Parser
+cd ISO8583-Parser
+```
+
+2. Run with command line arguments:
+```bash
+cargo run -- --message <hex-message> [--including-header-length] [--tlv-private] [--ltv-private]
+```
+
+Or run without arguments to use interactive mode:
+```bash
+cargo run
+```
+
 ### Run it as a PHP Web Server
 1. Download the source code and go to the root directory of your source code
 2. Run below command inside **PowerShell**:
@@ -23,65 +60,64 @@ This Rust program gets iso messages in hex string format and it extracts and pro
    localhost:12345
    ```
 
-### Compile and Utilize as a Command Line Interface (CLI).
+**Important Note:** As the PHP Web server uses a rust program to parse the message, you will need it. You can achieve this program by building release of the rust written program from the source or you can downlaod the executable file with **iso_parser_downloader**.
 
-1. Clone the repository:
+### Library Usage
 
-    ```bash
-    git clone https://github.com/HosseinAssaran/ISO8583-Parser
-    cd ISO8583-Parser
-    ```
+1. Add the dependency to your `Cargo.toml`:
+```toml
+[dependencies]
+iso8583_parser = "0.1.12"
+```
 
-2. Build and run the program:
+2. Use in your code:
+```rust
+use iso8583_parser::{parse_iso8583, StringManipulation};
 
-    ```bash
-    cargo build
-    cargo run
-    ```
+fn main() {
+    let message = "0100..."; // Your ISO8583 message in hex
+    let result = parse_iso8583(
+        message,
+        false, // including_header_length
+        false, // tlv_private
+        false  // ltv_private
+    );
 
-3. Follow the prompts to enter an iso message for parsing.
-
-### Compile and Integrate the Rust Parser CLI with a PHP Web Server.
-
-1. Clone the repository:
-
-    ```bash
-    git clone https://github.com/HosseinAssaran/ISO8583-Parser
-    cd ISO8583-Parser
-    ```
-
-2. Build relaese:
-   
-    ```bash
-    cargo build --release
-    ````
-
-3. Run PHP Server:
-   
-    ```bash
-    php -S localhost:12345
-    ```` 
-
-4. Open you browser and go to `localhost:12345`
+    match result {
+        Ok(parsed) => {
+            println!("MTI: {}", parsed.mti);
+            println!("Bitmap: {:?}", parsed.bitmap);
+            // ... process other fields
+        },
+        Err(e) => println!("Error parsing message: {}", e),
+    }
+}
+```
 
 ## Testing
 
-To run tests, use the following command:
-
+Run the test suite:
 ```bash
 cargo test
 ```
 
-## Usage As a Library
-1. Add the iso8583_parser package to your project using Cargo:
+## Building for Release
 
+Build optimized binaries:
 ```bash
-cargo add iso8583_parser
+cargo build --release
 ```
 
-2. Import the necessary modules where you want to use the library functions:
+This will create optimized executables in the `target/release` directory:
+- `iso8583_parser` - CLI application
+- `iso8583_parser_gui` - GUI application
 
-```bash
-use iso8583_parser::{StringManipulation, positions_of_set_bits, LTV};
+## License
 
-```
+Licensed under either of:
+- MIT license
+- Apache License, Version 2.0
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
