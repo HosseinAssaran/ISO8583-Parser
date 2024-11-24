@@ -5,7 +5,8 @@ use iso8583_parser::gui::ISO8583ParserApp;
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
-            .with_inner_size([800.0, 600.0]),
+            .with_inner_size([800.0, 600.0])
+            .with_resizable(false),
         ..Default::default()
     };
     
