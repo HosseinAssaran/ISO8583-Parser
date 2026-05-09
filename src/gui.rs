@@ -81,6 +81,7 @@ impl eframe::App for ISO8583ParserApp {
             }
         });
     }
+	fn ui(&mut self, _ui: &mut egui::Ui, _frame: &mut eframe::Frame) {}
 }
 
 impl ISO8583ParserApp {
