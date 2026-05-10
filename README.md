@@ -1,7 +1,7 @@
 # ISO8583 parser 
 ![Crates.io](https://img.shields.io/crates/v/iso8583_parser?style=flat-square)
 ![Crates.io](https://img.shields.io/crates/d/iso8583_parser?style=flat-square)
-![build workflow](https://github.com/HosseinAssaran/ISO8583-Parser/actions/workflows/rust.yml/badge.svg)
+![build workflow](https://github.com/HosseinAssaran/ISO8583-Parser/actions/workflows/build.yml/badge.svg)
 ![release workflow](https://github.com/HosseinAssaran/ISO8583-Parser/actions/workflows/release.yml/badge.svg)
 
 This Rust program parses ISO8583 messages in hex string format and extracts specific fields. It provides multiple interfaces including a GUI, CLI, and a library for integration into other projects.
